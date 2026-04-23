@@ -21,7 +21,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    const id = setInterval(() => setFrame(f => f === 6 ? 1 : f + 1), 500);
+    const id = setInterval(() => setFrame(f => f === 6 ? 1 : f + 1), 250);
     return () => clearInterval(id);
   }, []);
 
