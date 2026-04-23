@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const FORM_ID = "261115069818055";
 const API_KEY = "e031c082b71313437e17715928524edd";
@@ -11,7 +11,7 @@ export default function Page() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [frame, setFrame] = useState(1);
 
   useEffect(() => {
     const update = () => setHeight(window.innerHeight);
@@ -21,7 +21,8 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    videoRef.current?.play().catch(() => {});
+    const id = setInterval(() => setFrame(f => f === 6 ? 1 : f + 1), 500);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -71,16 +72,18 @@ export default function Page() {
       className="w-full flex items-center justify-center relative"
       style={{ height: height ?? "100vh" }}
     >
-      <video
-        ref={videoRef}
-        src="/Guru_Coming-Soon.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="w-full h-full"
-        style={{ objectFit: "contain", maxWidth: "652px" }}
-      />
+      <div className="relative w-full h-full" style={{ maxWidth: "652px" }}>
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={`/Guru_${i}.jpg`}
+            alt=""
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: "contain", opacity: frame === i ? 1 : 0 }}
+          />
+        ))}
+      </div>
 
       <button
         type="button"
