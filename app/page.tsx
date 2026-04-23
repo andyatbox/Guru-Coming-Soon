@@ -1,65 +1,267 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useRef, useState } from "react";
+
+const FORM_ID = "261115069818055";
+const API_KEY = "e031c082b71313437e17715928524edd";
+
+export default function Page() {
+  const [height, setHeight] = useState<number | null>(null);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const update = () => setHeight(window.innerHeight);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    videoRef.current?.play().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOverlayOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (submitting) return;
+
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    if (data.get("website")) return; // honeypot
+
+    const email = String(data.get("q4_email") ?? "");
+    const message = String(data.get("q2_q2_textarea0") ?? "");
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      const body = new URLSearchParams();
+      body.set("submission[4]", email);
+      body.set("submission[2]", message);
+      const res = await fetch(
+        `https://api.jotform.com/form/${FORM_ID}/submissions?apiKey=${API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main
+      className="w-full flex items-center justify-center relative"
+      style={{ height: height ?? "100vh" }}
+    >
+      <video
+        ref={videoRef}
+        src="/Guru_Coming-Soon.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="w-full h-full"
+        style={{ objectFit: "contain", maxWidth: "652px" }}
+      />
+
+      <button
+        type="button"
+        onClick={() => setOverlayOpen(true)}
+        aria-label="Open contact form"
+        aria-hidden={overlayOpen}
+        tabIndex={overlayOpen ? -1 : 0}
+        className="fixed top-4 right-4 z-40 cursor-pointer bg-transparent border-0 p-0 transition-opacity duration-150"
+        style={{
+          opacity: overlayOpen ? 0 : 1,
+          pointerEvents: overlayOpen ? "none" : "auto",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/contact-button.svg"
+          alt=""
+          draggable={false}
+          style={{ width: "100px", height: "auto" }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </button>
+
+      <div
+        aria-hidden={!overlayOpen}
+        className="fixed inset-0 w-full h-full flex items-center justify-center transition-opacity duration-200"
+        style={{
+          zIndex: 2147483647,
+          opacity: overlayOpen ? 1 : 0,
+          pointerEvents: overlayOpen ? "auto" : "none",
+          backgroundColor: "rgba(103, 35, 29, 0.55)",
+        }}
+      >
+        <div
+          className="relative rounded-lg shadow-xl w-[min(92vw,720px)] max-h-[90vh] overflow-auto p-8"
+          style={{ backgroundColor: "#ff5744" }}
+        >
+          <button
+            type="button"
+            onClick={() => setOverlayOpen(false)}
+            aria-label="Close contact form"
+            className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full text-[#67231d] hover:bg-[rgba(103,35,29,0.15)] text-2xl leading-none cursor-pointer"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            ×
+          </button>
+
+          {submitted ? (
+            <div className="py-10 text-center" style={{ color: "#67231d" }}>
+              <h2 className="text-2xl font-semibold mb-2">
+                Thanks — your message is on its way.
+              </h2>
+              <p>We&apos;ll get back to you shortly.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate={false}>
+              <ul
+                className="form-section page-section"
+                role="presentation"
+              >
+                <li
+                  className="form-line jf-required"
+                  data-type="control_email"
+                  id="id_4"
+                  data-css-selector="id_4"
+                >
+                  <label
+                    className="form-label form-label-top form-label-auto"
+                    id="label_4"
+                    htmlFor="input_4"
+                  >
+                    {" "}
+                    Email<span className="form-required">*</span>{" "}
+                  </label>
+                  <div
+                    id="cid_4"
+                    className="form-input-wide jf-required"
+                    data-layout="half"
+                  >
+                    {" "}
+                    <span
+                      className="form-sub-label-container"
+                      style={{ verticalAlign: "top" }}
+                    >
+                      <input
+                        type="email"
+                        id="input_4"
+                        name="q4_email"
+                        className="form-textbox validate[required, Email]"
+                        data-defaultvalue=""
+                        autoComplete="section-input_4 email"
+                        style={{ width: "310px" }}
+                        size={310}
+                        data-component="email"
+                        aria-labelledby="label_4 sublabel_input_4"
+                        required
+                        defaultValue=""
+                      />
+                      <label
+                        className="form-sub-label"
+                        htmlFor="input_4"
+                        id="sublabel_input_4"
+                        style={{ minHeight: "13px" }}
+                      >
+                        example@example.com
+                      </label>
+                    </span>{" "}
+                  </div>
+                </li>
+                <li
+                  className="form-line jf-required"
+                  data-type="control_textarea"
+                  id="id_2"
+                  data-css-selector="id_2"
+                >
+                  <label
+                    className="form-label form-label-top form-label-auto"
+                    id="label_2"
+                    htmlFor="input_2"
+                  >
+                    {" "}
+                    Message<span className="form-required">*</span>{" "}
+                  </label>
+                  <div
+                    id="cid_2"
+                    className="form-input-wide jf-required"
+                    data-layout="full"
+                  >
+                    {" "}
+                    <textarea
+                      id="input_2"
+                      className="form-textarea validate[required]"
+                      name="q2_q2_textarea0"
+                      style={{ width: "648px", height: "163px" }}
+                      data-component="textarea"
+                      required
+                      aria-labelledby="label_2"
+                    />{" "}
+                  </div>
+                </li>
+                <li
+                  className="form-line"
+                  data-type="control_button"
+                  id="id_3"
+                  data-css-selector="id_3"
+                >
+                  <div
+                    id="cid_3"
+                    className="form-input-wide"
+                    data-layout="full"
+                  >
+                    <div
+                      data-align="auto"
+                      className="form-buttons-wrapper form-buttons-auto   jsTest-button-wrapperField"
+                    >
+                      <button
+                        id="input_3"
+                        type="submit"
+                        disabled={submitting}
+                        className="form-submit-button form-submit-button-white-400 submit-button jf-form-buttons jsTest-submitField legacy-submit"
+                        data-component="button"
+                        data-content=""
+                        aria-live="polite"
+                      >
+                        {submitting ? "Sending…" : "Send Message"}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+                <li style={{ display: "none" }}>
+                  Should be Empty:{" "}
+                  <input type="text" name="website" defaultValue="" />
+                </li>
+              </ul>
+              {error && (
+                <p className="mt-3 text-sm text-red-600" role="alert">
+                  Couldn&apos;t send: {error}. Please try again.
+                </p>
+              )}
+            </form>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
